@@ -5,21 +5,68 @@ output:
     keep_md: true
 ---
 
-
 ## Loading and preprocessing the data
+```{r loadData}
+library("readr")
 
-
+data<-read_csv("activity.csv")
+```
 
 ## What is mean total number of steps taken per day?
+```{r meanDaySteps}
 
+library("dplyr")
+library("lattice")
 
+data1 <- data %>% group_by(date) %>% summarize(daysteps = sum(steps))
+
+histogram(data1$daysteps, data=data1, xlab='Daily Steps')
+meanDailySteps = mean(data1$daysteps, na.rm = T)
+medianDailySteps = median(data1$daysteps, na.rm = T)
+```
 
 ## What is the average daily activity pattern?
+```{r dailyPattern}
+library('ggplot2')
 
+#data2 <- data %>% group_by(interval) %>% summarize(daysteps = mean(steps, na.rm = T))
+data2 <- aggregate(data$steps, by = list(data$interval), mean, na.rm=TRUE)
+ggplot(data2, aes(x = interval, y = steps)) + geom_line()
 
+```
 
 ## Imputing missing values
+We use mean for the corresponding time interval to fill out the missing values. The new dataset, called fullData holds the upddated data.
 
+```{r MissingValues}
 
+missingValues <- data %>% filter(is.na(steps))
+number_missValues <-length(missingValues$steps)
+
+fullData <- data
+fullData$steps[is.na(fullData$steps)] <- 
+    tapply(fullData$steps, fullData$interval, mean, na.rm = TRUE)
+
+histogram(fullData$steps, data=fullData, xlab='Daily Steps')
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
+``` {r weekdays}
+
+fullData$Day <- weekdays(as.Date(as.character(fullData$date)))
+fullData$DayType <- as.factor(c("Weekend","Weekday"))
+
+weekendDays <- fullData$Day == "Saturday" | fullData$Day == "Sunday"
+
+fullData$DayType[weekendDays] = "Weekend"
+fullData$DayType[!weekendDays] = "Weekday"
+
+fullData2 <- tapply(fullData$steps, 
+                        list(fullData$DayType, fullData$interval),
+                        mean)
+
+x <- as.data.frame(as.table(fullData2))
+names(x) <- c('DayType', 'Interval', 'Steps')
+
+xyplot(Interval ~ Steps | DayType, x)
+```

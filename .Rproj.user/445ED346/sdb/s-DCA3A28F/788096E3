@@ -1,0 +1,17 @@
+{
+    "contents" : "---\ntitle: \"Reproducible Research: Peer Assessment 1\"\noutput: \n  html_document:\n    keep_md: true\n---\n\n## Loading and preprocessing the data\n```{r loadData}\nlibrary(\"readr\")\n\ndata<-read_csv(\"activity.csv\")\n```\n\n## What is mean total number of steps taken per day?\n```{r meanDaySteps}\n\nlibrary(\"dplyr\")\nlibrary(\"lattice\")\n\ndata1 <- data %>% group_by(date) %>% summarize(daysteps = sum(steps))\n\nhistogram(data1$daysteps, data=data1, xlab='Daily Steps')\nmeanDailySteps = mean(data1$daysteps, na.rm = T)\nmedianDailySteps = median(data1$daysteps, na.rm = T)\n```\n\n## What is the average daily activity pattern?\n```{r dailyPattern}\nlibrary('ggplot2')\n\n#data2 <- data %>% group_by(interval) %>% summarize(daysteps = mean(steps, na.rm = T))\ndata2 <- aggregate(data$steps, by = list(data$interval), mean, na.rm=TRUE)\nggplot(data2, aes(x = interval, y = steps)) + geom_line()\n\n```\n\n## Imputing missing values\nWe use mean for the corresponding time interval to fill out the missing values. The new dataset, called fullData holds the upddated data.\n\n```{r MissingValues}\n\nmissingValues <- data %>% filter(is.na(steps))\nnumber_missValues <-length(missingValues$steps)\n\nfullData <- data\nfullData$steps[is.na(fullData$steps)] <- \n    tapply(fullData$steps, fullData$interval, mean, na.rm = TRUE)\n\nhistogram(fullData$steps, data=fullData, xlab='Daily Steps')\n```\n\n## Are there differences in activity patterns between weekdays and weekends?\n``` {r weekdays}\n\nfullData$Day <- weekdays(as.Date(as.character(fullData$date)))\nfullData$DayType <- as.factor(c(\"Weekend\",\"Weekday\"))\n\nweekendDays <- fullData$Day == \"Saturday\" | fullData$Day == \"Sunday\"\n\nfullData$DayType[weekendDays] = \"Weekend\"\nfullData$DayType[!weekendDays] = \"Weekday\"\n\nfullData2 <- tapply(fullData$steps, \n                        list(fullData$DayType, fullData$interval),\n                        mean)\n\nx <- as.data.frame(as.table(fullData2))\nnames(x) <- c('DayType', 'Interval', 'Steps')\n\nxyplot(Interval ~ Steps | DayType, x)\n```",
+    "created" : 1450445411583.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "1452185947",
+    "id" : "788096E3",
+    "lastKnownWriteTime" : 1450654769,
+    "path" : "C:/Leo/HW/RepData_PeerAssessment1/PA1_template.Rmd",
+    "project_path" : "PA1_template.Rmd",
+    "properties" : {
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "type" : "r_markdown"
+}
